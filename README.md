@@ -1,234 +1,342 @@
 # naPorta Orders API
 
-API REST de gerenciamento de pedidos construída como resposta ao desafio técnico
-back-end da naPorta. Implementa autenticação JWT, CRUD completo de pedidos com
-soft delete, filtros, paginação, documentação Swagger, testes automatizados e
-empacotamento Docker.
+API REST para gerenciamento de pedidos desenvolvida como parte do desafio técnico back-end da naPorta.
 
-## Stack
+O projeto foi construído utilizando NestJS, PostgreSQL e Prisma, com foco em organização de código, boas práticas, segurança e facilidade de manutenção.
 
-- **Runtime:** Node.js 20 LTS
-- **Framework:** NestJS 11 + TypeScript 5
-- **Banco:** PostgreSQL 16
-- **ORM:** Prisma 7
-- **Autenticação:** JWT Bearer (passport-jwt)
-- **Validação:** class-validator + class-transformer
-- **Documentação:** Swagger / OpenAPI 3
-- **Testes:** Jest
-- **Infra:** Docker + Docker Compose
+A aplicação conta com:
 
-> **Por que essas escolhas?** O desafio indica NestJS, PostgreSQL e Prisma como
-> preferenciais. Todos foram mantidos. Nenhuma justificativa adicional é
-> necessária no README porque seguimos as opções recomendadas.
+- autenticação JWT
+- CRUD completo de pedidos
+- soft delete
+- filtros e paginação
+- documentação Swagger
+- testes automatizados
+- ambiente Docker pronto para uso
 
-## Arquitetura
+---
 
-Clean Architecture enxuta, com separação explícita em camadas:
+# Tecnologias utilizadas
 
+- **Node.js 20**
+- **NestJS 11**
+- **TypeScript 5**
+- **PostgreSQL 16**
+- **Prisma ORM**
+- **JWT + Passport**
+- **class-validator**
+- **Swagger / OpenAPI**
+- **Jest**
+- **Docker + Docker Compose**
+
+---
+
+# Estrutura do projeto
+
+A aplicação segue uma arquitetura em camadas para manter a separação de responsabilidades mais clara:
+
+```txt
+Controller -> Service -> Repository -> Prisma -> PostgreSQL
 ```
-HTTP (Controller) -> Application (Service) -> Repository -> Prisma -> PostgreSQL
-```
 
-| Camada       | Responsabilidade                                                 |
-|--------------|------------------------------------------------------------------|
-| Controller   | Binding HTTP, validação de DTO, autorização                      |
-| Service      | Regras de negócio, orquestração                                  |
-| Repository   | Encapsula o Prisma — única camada que conhece o ORM              |
-| Common       | Filtros, interceptors, guards, decorators e tipos compartilhados |
+### Organização das camadas
 
-A inversão `Repository <- Service` permite substituir o Prisma sem mexer em
-serviços/controllers. Os DTOs ficam isolados em cada módulo.
+| Camada | Responsabilidade |
+|---|---|
+| Controller | Entrada HTTP, validação e autenticação |
+| Service | Regras de negócio |
+| Repository | Comunicação com banco via Prisma |
+| Common | Guards, filtros, decorators e utilitários compartilhados |
 
-```
+---
+
+## Estrutura de pastas
+
+```txt
 src/
-├── app.module.ts            # Composição raiz
-├── main.ts                  # Bootstrap (pipes, swagger, cors)
-├── common/                  # filter, interceptors, guard, decorators, types
-├── config/                  # configuration.ts tipado
-├── prisma/                  # PrismaModule (global) + PrismaService
+├── app.module.ts
+├── main.ts
+├── common/
+├── config/
+├── prisma/
 └── modules/
-    ├── auth/                # AuthController + Service + JwtStrategy + DTOs
-    ├── users/               # UsersService + Repository (usado pelo Auth)
-    └── orders/              # OrdersController + Service + Repository + DTOs
+    ├── auth/
+    ├── users/
+    └── orders/
 ```
 
-## Pré-requisitos
+---
+
+# Pré-requisitos
+
+Antes de iniciar o projeto, é necessário ter instalado:
 
 - Node.js 20+
 - npm 10+
-- Docker + Docker Compose (opcional, recomendado)
-- PostgreSQL 16 (caso não use Docker)
+- Docker + Docker Compose (recomendado)
+- PostgreSQL 16 (caso rode sem Docker)
 
-## Setup com Docker (recomendado)
+---
+
+# Executando com Docker
 
 ```bash
 cp .env.example .env
+
 docker compose up -d --build
+
 docker compose exec api npx prisma migrate deploy
+
 docker compose exec api npm run db:seed
 ```
 
-- API: <http://localhost:3000/api/v1>
-- Swagger: <http://localhost:3000/api/docs>
-- Health: <http://localhost:3000/api/v1/health>
+### Endpoints locais
 
-## Setup manual (sem Docker)
+| Serviço | URL |
+|---|---|
+| API | http://localhost:3000/api/v1 |
+| Swagger | http://localhost:3000/api/docs |
+| Health Check | http://localhost:3000/api/v1/health |
+
+---
+
+# Executando sem Docker
 
 ```bash
-cp .env.example .env       # ajuste DATABASE_URL para o seu Postgres
+cp .env.example .env
+
 npm install
-npm run db:migrate         # cria as tabelas
-npm run db:seed            # popula com 10 pedidos fictícios
+
+npm run db:migrate
+
+npm run db:seed
+
 npm run start:dev
 ```
 
-## Variáveis de ambiente
+---
 
-Defina em `.env`. Exemplo em `.env.example`.
+# Variáveis de ambiente
 
-| Variável         | Obrigatória | Descrição                                                   |
-|------------------|-------------|-------------------------------------------------------------|
-| `NODE_ENV`       | não         | `development` (padrão) \| `production` \| `test`            |
-| `PORT`           | não         | Porta HTTP (padrão `3000`)                                  |
-| `DATABASE_URL`   | **sim**     | Connection string Postgres                                  |
-| `JWT_SECRET`     | **sim**     | Segredo do JWT — use 32+ caracteres aleatórios em produção  |
-| `JWT_EXPIRES_IN` | não         | Tempo de vida do token (padrão `15m`)                       |
+As variáveis ficam no arquivo `.env`.
 
-A aplicação **falha rápido** no bootstrap se `DATABASE_URL` ou `JWT_SECRET`
-estiverem ausentes — para evitar subir uma API silenciosamente quebrada.
+Exemplo disponível em `.env.example`.
 
-## Endpoints
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| NODE_ENV | não | Ambiente da aplicação |
+| PORT | não | Porta da API |
+| DATABASE_URL | sim | URL de conexão com PostgreSQL |
+| JWT_SECRET | sim | Chave secreta do JWT |
+| JWT_EXPIRES_IN | não | Tempo de expiração do token |
 
-| Método | Rota                    | Auth | Descrição                       |
-|--------|-------------------------|------|---------------------------------|
-| GET    | `/api/v1/health`        | não  | Health check (app + DB)         |
-| POST   | `/api/v1/auth/register` | não  | Cadastro de usuário             |
-| POST   | `/api/v1/auth/login`    | não  | Login / obtenção de token       |
-| POST   | `/api/v1/orders`        | sim  | Criar pedido                    |
-| GET    | `/api/v1/orders`        | sim  | Listar/filtrar pedidos          |
-| GET    | `/api/v1/orders/:id`    | sim  | Buscar pedido por ID            |
-| PATCH  | `/api/v1/orders/:id`    | sim  | Atualizar pedido                |
-| DELETE | `/api/v1/orders/:id`    | sim  | Exclusão lógica (soft delete)   |
+A aplicação valida as variáveis críticas no bootstrap para evitar subir com configuração incompleta.
 
-Todas as rotas autenticadas exigem o header:
+---
 
+# Rotas da API
+
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| GET | `/api/v1/health` | Não | Health check |
+| POST | `/api/v1/auth/register` | Não | Cadastro de usuário |
+| POST | `/api/v1/auth/login` | Não | Login |
+| POST | `/api/v1/orders` | Sim | Criar pedido |
+| GET | `/api/v1/orders` | Sim | Listar pedidos |
+| GET | `/api/v1/orders/:id` | Sim | Buscar pedido |
+| PATCH | `/api/v1/orders/:id` | Sim | Atualizar pedido |
+| DELETE | `/api/v1/orders/:id` | Sim | Remover pedido |
+
+---
+
+# Autenticação
+
+As rotas protegidas utilizam JWT Bearer Token.
+
+Header necessário:
+
+```txt
+Authorization: Bearer <token>
 ```
-Authorization: Bearer <accessToken>
+
+---
+
+# Filtros disponíveis
+
+Endpoint:
+
+```txt
+GET /api/v1/orders
 ```
 
-### Filtros em `GET /api/v1/orders`
+| Parâmetro | Tipo | Exemplo |
+|---|---|---|
+| orderNumber | string | ORD-2026-000001 |
+| status | enum | PENDING |
+| startDate | date | 2026-01-01 |
+| endDate | date | 2026-12-31 |
+| page | number | 1 |
+| limit | number | 20 |
 
-| Parâmetro     | Tipo   | Exemplo            | Observação                         |
-|---------------|--------|--------------------|------------------------------------|
-| `orderNumber` | string | `ORD-2026-000001`  | Busca parcial, case-insensitive    |
-| `status`      | enum   | `PENDING`          | `PENDING\|CONFIRMED\|IN_TRANSIT\|DELIVERED\|CANCELLED` |
-| `startDate`   | ISO    | `2026-01-01`       | Inclusivo, aplicado em `createdAt` |
-| `endDate`     | ISO    | `2026-12-31`       | Inclusivo, aplicado em `createdAt` |
-| `page`        | number | `1`                | padrão `1`                         |
-| `limit`       | number | `20`               | padrão `20`, máximo `100`          |
+---
 
-### Envelope das respostas
+# Estrutura das respostas
 
-Todas as respostas com corpo são embrulhadas em:
+## Sucesso
 
 ```json
 {
   "success": true,
-  "data": <payload>,
+  "data": {},
   "timestamp": "2026-01-01T00:00:00.000Z"
 }
 ```
 
-Erros seguem o padrão:
+## Erro
 
 ```json
 {
   "statusCode": 401,
-  "timestamp": "...",
+  "timestamp": "2026-01-01T00:00:00.000Z",
   "path": "/api/v1/orders",
   "method": "GET",
   "message": "Unauthorized"
 }
 ```
 
-## Credenciais do seed
+---
 
-Após rodar `npm run db:seed`:
+# Dados do seed
 
+Após executar:
+
+```bash
+npm run db:seed
 ```
+
+Será criado um usuário padrão:
+
+```txt
 Email: dev@naporta.com.br
 Senha: senha123
 ```
 
-Exemplo de login (httpie):
+Exemplo de login:
 
 ```bash
-http POST :3000/api/v1/auth/login email=dev@naporta.com.br password=senha123
+http POST :3000/api/v1/auth/login \
+email=dev@naporta.com.br \
+password=senha123
 ```
 
-## Scripts npm úteis
+---
 
-| Script                | Descrição                                |
-|-----------------------|------------------------------------------|
-| `npm run start:dev`   | Sobe a API em modo watch                 |
-| `npm run build`       | Compila para `dist/`                     |
-| `npm run start:prod`  | Roda o build de produção                 |
-| `npm test`            | Roda testes unitários                    |
-| `npm run test:cov`    | Roda testes com cobertura                |
-| `npm run lint`        | ESLint com autofix                       |
-| `npm run format`      | Prettier                                 |
-| `npm run db:generate` | Gera o Prisma Client                     |
-| `npm run db:migrate`  | Executa migrations em dev                |
-| `npm run db:seed`     | Popula o banco com pedidos fictícios     |
-| `npm run db:studio`   | Abre o Prisma Studio                     |
+# Scripts úteis
 
-## Decisões técnicas
+| Script | Descrição |
+|---|---|
+| npm run start:dev | Ambiente de desenvolvimento |
+| npm run build | Build da aplicação |
+| npm run start:prod | Executa build de produção |
+| npm test | Testes unitários |
+| npm run test:cov | Cobertura de testes |
+| npm run lint | ESLint |
+| npm run format | Prettier |
+| npm run db:generate | Prisma Client |
+| npm run db:migrate | Executa migrations |
+| npm run db:seed | Popula banco |
+| npm run db:studio | Prisma Studio |
 
-- **Soft delete** via `deletedAt` — preserva histórico, auditável e reversível.
-- **Repository pattern** — isola o ORM da regra de negócio.
-- **`Decimal` para preço** — evita erro de ponto flutuante em moeda.
-- **Índices explícitos** em `orderNumber`, `status`, `createdAt`, `deletedAt`,
-  `userId` — performance real em filtros.
-- **Whitelist no `ValidationPipe`** com `forbidNonWhitelisted: true` — rejeita
-  campos desconhecidos por padrão.
-- **Mensagem genérica no login** ("Credenciais inválidas") — anti-enumeração
-  de usuários (OWASP).
-- **Bcrypt com 12 rounds** — recomendação atual da OWASP para senhas.
-- **JWT global guard com `@Public()` opt-out** — segurança por padrão: novas
-  rotas estão protegidas a menos que sejam explicitamente públicas.
-- **Posse do recurso validada no service** — usuário só lista/edita/exclui
-  seus próprios pedidos (`userId` no `where`); pedidos de terceiros retornam
-  404 (não revela existência).
-- **`ParseUUIDPipe`** nos `:id` — rejeita IDs malformados antes do banco.
-- **Versionamento por URI** (`/api/v1/...`) — preparado para evoluções.
-- **Swagger com Bearer auth persistido** — quem revisa testa direto no `/api/docs`.
+---
 
-## Testes
+# Algumas decisões técnicas
+
+### Soft delete
+
+Foi utilizado `deletedAt` para manter histórico dos registros sem remover dados fisicamente do banco.
+
+---
+
+### Repository Pattern
+
+A camada de repository foi utilizada para desacoplar a regra de negócio do ORM.
+
+Isso facilita manutenção futura e possíveis trocas de tecnologia.
+
+---
+
+### Segurança
+
+Algumas medidas implementadas:
+
+- JWT com rotas protegidas por padrão
+- bcrypt para hash de senha
+- validação global com whitelist
+- bloqueio de campos não permitidos
+- mensagens genéricas no login para evitar enumeração de usuários
+
+---
+
+### Performance
+
+Foram adicionados índices nos campos mais utilizados em filtros:
+
+- `orderNumber`
+- `status`
+- `createdAt`
+- `deletedAt`
+- `userId`
+
+---
+
+# Testes
+
+Os testes cobrem principalmente:
+
+- criação de pedidos
+- listagem com paginação
+- soft delete
+- autenticação
+- login
+- hash de senha
+
+Todos os testes utilizam mocks, sem depender de banco real.
+
+Executar:
 
 ```bash
 npm test
 ```
 
-Os testes unitários cobrem `OrdersService` (criação, busca, paginação,
-validação de datas e soft delete) e `AuthService` (registro, login, hashing
-bcrypt e mensagens anti-enumeração) com mocks de repositório/JWT/config —
-sem dependência de banco real.
+---
 
-## Bônus do desafio
+# Diferenciais implementados
 
-| Item               | Status                                                              |
-|--------------------|---------------------------------------------------------------------|
-| Clean Code         | Sim — camadas, single responsibility, sem comentários supérfluos.   |
-| Testes automáticos | Sim — unitários para `OrdersService` e `AuthService`.               |
-| Docker             | Sim — `Dockerfile` multi-stage + `docker-compose.yml` com Postgres. |
-| Linter             | Sim — ESLint 9 (flat config) + Prettier já configurados pelo CLI.   |
-| Serverless         | Não implementado — exigia decisão de provider; preferi entregar a base sólida primeiro. |
+| Funcionalidade | Status |
+|---|---|
+| Arquitetura organizada | ✅ |
+| Testes automatizados | ✅ |
+| Docker | ✅ |
+| Swagger | ✅ |
+| Validação global | ✅ |
+| Soft delete | ✅ |
+| Paginação | ✅ |
+| Filtros | ✅ |
 
-## Próximos passos (se este fosse um projeto real)
+---
 
-- E2E com `supertest` cobrindo o fluxo `register -> login -> create -> list`.
-- Refresh token / rotação de credenciais.
-- Rate limiting (`@nestjs/throttler`) nas rotas de auth.
-- Observabilidade (request id por header, métricas Prometheus, OpenTelemetry).
-- Extrair `Customer` e `Address` para tabelas próprias quando o domínio crescer.
-- Pipeline CI no GitHub Actions (lint + test + build).
+# Melhorias futuras
+
+Caso o projeto evoluísse para produção, alguns próximos passos seriam:
+
+- testes E2E com Supertest
+- refresh token
+- rate limiting
+- observabilidade e métricas
+- pipeline CI/CD
+- monitoramento
+- logs estruturados
+- OpenTelemetry
+- GitHub Actions
+
+---
