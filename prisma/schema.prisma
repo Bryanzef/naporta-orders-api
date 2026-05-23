@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  orderNumber String      @unique @map("order_number")
+  status      OrderStatus @default(PENDING)
+  deliveryDate DateTime   @map("delivery_date")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedAt   DateTime?   @map("deleted_at")
+
+  customerName     String @map("customer_name")
+  customerDocument String @map("customer_document")
+
+  addressStreet     String  @map("address_street")
+  addressNumber     String  @map("address_number")
+  addressComplement String? @map("address_complement")
+  addressDistrict   String  @map("address_district")
+  addressCity       String  @map("address_city")
+  addressState      String  @map("address_state")
+  addressZipCode    String  @map("address_zip_code")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+  items  OrderItem[]
+
+  @@index([orderNumber])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  quantity    Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  orderId String @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_items")
+}
