@@ -167,6 +167,8 @@ Endpoint:
 
 ```txt
 GET /api/v1/orders
+
+CADA PEDIDO FICA VINCULADO A UM USUARIO
 ```
 
 | Parâmetro | Tipo | Exemplo |
