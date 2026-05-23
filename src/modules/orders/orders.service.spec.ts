@@ -1,8 +1,9 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, Prisma } from '@prisma/client';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { FilterOrderDto } from './dto/filter-order.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrdersRepository, OrderWithItems } from './orders.repository';
 import { OrdersService } from './orders.service';
 
@@ -82,6 +83,42 @@ describe('OrdersService', () => {
       );
       expect(result.id).toBe('order-1');
     });
+
+    it('deve recusar data de entrega inválida', async () => {
+      const dto = buildCreateDto();
+      dto.deliveryDate = 'data-invalida';
+
+      await expect(service.create('user-1', dto)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar ConflictException quando orderNumber duplicado', async () => {
+      repository.generateOrderNumber.mockResolvedValue('ORD-2026-000001');
+      repository.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint', {
+          code: 'P2002',
+          clientVersion: '6.19.3',
+        }),
+      );
+
+      await expect(
+        service.create('user-1', buildCreateDto()),
+      ).rejects.toMatchObject({
+        message: 'Número de pedido duplicado, tente novamente',
+      });
+    });
+
+    it('deve relançar erros desconhecidos do Prisma', async () => {
+      repository.generateOrderNumber.mockResolvedValue('ORD-2026-000001');
+      const unknownError = new Error('falha inesperada');
+      repository.create.mockRejectedValue(unknownError);
+
+      await expect(service.create('user-1', buildCreateDto())).rejects.toBe(
+        unknownError,
+      );
+    });
   });
 
   describe('findOne', () => {
@@ -154,6 +191,65 @@ describe('OrdersService', () => {
         NotFoundException,
       );
       expect(repository.softDelete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update', () => {
+    it('deve atualizar campos parciais do pedido', async () => {
+      const updated = buildOrder({ customerName: 'Novo Cliente' });
+      repository.findOne.mockResolvedValue(buildOrder());
+      repository.update.mockResolvedValue(updated);
+
+      const dto: UpdateOrderDto = { customerName: 'Novo Cliente' };
+      const result = await service.update('order-1', 'user-1', dto);
+
+      expect(repository.update).toHaveBeenCalledWith(
+        'order-1',
+        expect.objectContaining({ customerName: 'Novo Cliente' }),
+      );
+      expect(result.customerName).toBe('Novo Cliente');
+    });
+
+    it('deve substituir itens quando informados no DTO', async () => {
+      repository.findOne.mockResolvedValue(buildOrder());
+      repository.update.mockResolvedValue(buildOrder());
+
+      const dto: UpdateOrderDto = {
+        items: [{ description: 'Novo item', price: 9.99, quantity: 2 }],
+      };
+      await service.update('order-1', 'user-1', dto);
+
+      expect(repository.update).toHaveBeenCalledWith(
+        'order-1',
+        expect.objectContaining({
+          items: {
+            deleteMany: {},
+            create: [
+              expect.objectContaining({
+                description: 'Novo item',
+                quantity: 2,
+              }),
+            ],
+          },
+        }),
+      );
+    });
+
+    it('deve recusar data de entrega inválida na atualização', async () => {
+      repository.findOne.mockResolvedValue(buildOrder());
+
+      await expect(
+        service.update('order-1', 'user-1', { deliveryDate: 'invalida' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar NotFoundException quando o pedido não existe', async () => {
+      repository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.update('order-1', 'user-1', { status: OrderStatus.DELIVERED }),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });

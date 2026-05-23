@@ -88,8 +88,28 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.service.ts",
+      "!prisma/**/*.ts",
+      "**/*.controller.ts",
+      "**/*.repository.ts",
+      "common/guards/**/*.ts",
+      "common/exceptions/**/*.ts",
+      "common/interceptors/**/*.ts",
+      "modules/auth/strategies/**/*.ts",
+      "config/configuration.ts"
     ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "\\.spec\\.ts$"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

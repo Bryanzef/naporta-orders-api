@@ -61,7 +61,7 @@ export class AuthService {
     const payload: JwtPayload = { sub: userId, email };
     const accessToken = this.jwtService.sign(payload);
     const expiresIn = this.parseExpirationSeconds(
-      this.configService.get<string>('jwt.expiresIn') ?? '15m',
+      this.configService.get<string>('jwt.expiresIn') ?? '24h',
     );
 
     return {

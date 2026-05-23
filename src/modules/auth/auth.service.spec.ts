@@ -126,4 +126,54 @@ describe('AuthService', () => {
       ).rejects.toBeInstanceOf(UnauthorizedException);
     });
   });
+
+  describe('parseExpirationSeconds', () => {
+    it.each([
+      ['15m', 15 * 60],
+      ['1h', 3600],
+      ['30s', 30],
+      ['2d', 2 * 86400],
+      ['120', 120],
+    ])('deve converter %s em %i segundos', async (raw, expected) => {
+      configService.get.mockReturnValue(raw);
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.create.mockResolvedValue({
+        id: 'user-1',
+        email: 'a@b.com',
+        name: 'Test',
+        passwordHash: 'hash',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await service.register({
+        name: 'Test',
+        email: 'a@b.com',
+        password: 'senha123',
+      });
+
+      expect(result.expiresIn).toBe(expected);
+    });
+
+    it('deve usar 900 segundos como fallback para formato inválido', async () => {
+      configService.get.mockReturnValue('invalido');
+      usersService.findByEmail.mockResolvedValue(null);
+      usersService.create.mockResolvedValue({
+        id: 'user-1',
+        email: 'a@b.com',
+        name: 'Test',
+        passwordHash: 'hash',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const result = await service.register({
+        name: 'Test',
+        email: 'a@b.com',
+        password: 'senha123',
+      });
+
+      expect(result.expiresIn).toBe(900);
+    });
+  });
 });

@@ -63,6 +63,7 @@ src/
     ├── auth/
     ├── users/
     └── orders/
+portal/          # Frontend demo servido em /
 ```
 
 ---
@@ -80,20 +81,29 @@ Antes de iniciar o projeto, é necessário ter instalado:
 
 # Executando com Docker
 
+O `docker-compose.yml` **não define credenciais fixas**. Usuário, senha e banco do
+PostgreSQL vêm exclusivamente do arquivo `.env` (copiado de `.env.example`).
+
 ```bash
 cp .env.example .env
+```
 
+Revise `DB_USER`, `DB_PASSWORD` e `DB_NAME` no `.env` antes de subir os containers.
+O `.env` não deve ser commitado — apenas o `.env.example`.
+
+```bash
 docker compose up -d --build
-
-docker compose exec api npx prisma migrate deploy
 
 docker compose exec api npm run db:seed
 ```
+
+As migrations rodam automaticamente ao iniciar o container `api`.
 
 ### Endpoints locais
 
 | Serviço | URL |
 |---|---|
+| Portal web | http://localhost:3000/ |
 | API | http://localhost:3000/api/v1 |
 | Swagger | http://localhost:3000/api/docs |
 | Health Check | http://localhost:3000/api/v1/health |
@@ -114,21 +124,43 @@ npm run db:seed
 npm run start:dev
 ```
 
+Portal: http://localhost:3000/
+
+---
+
+# Portal web
+
+Frontend simples em `portal/` (HTML, CSS e JavaScript) que simula o consumo da API pelo portal web.
+
+Após subir a aplicação, acesse http://localhost:3000/, faça login com as credenciais do seed e utilize login, listagem, filtros, criação, edição e exclusão de pedidos. O token JWT é armazenado no navegador e enviado como `Authorization: Bearer` em cada requisição autenticada.
+
 ---
 
 # Variáveis de ambiente
 
-As variáveis ficam no arquivo `.env`.
+As variáveis ficam no arquivo `.env` (obrigatório para Docker e recomendado localmente).
 
-Exemplo disponível em `.env.example`.
+Copie o exemplo antes de executar:
+
+```bash
+cp .env.example .env
+```
 
 | Variável | Obrigatória | Descrição |
 |---|---|---|
 | NODE_ENV | não | Ambiente da aplicação |
-| PORT | não | Porta da API |
+| PORT | sim (Docker) | Porta exposta da API no host |
+| DB_USER | sim (Docker) | Usuário do PostgreSQL |
+| DB_PASSWORD | sim (Docker) | Senha do PostgreSQL |
+| DB_NAME | sim (Docker) | Nome do banco |
+| DB_HOST | não | Host do banco (local sem Docker) |
+| DB_PORT | sim (Docker) | Porta exposta do PostgreSQL no host |
 | DATABASE_URL | sim | URL de conexão com PostgreSQL |
 | JWT_SECRET | sim | Chave secreta do JWT |
-| JWT_EXPIRES_IN | não | Tempo de expiração do token |
+| JWT_EXPIRES_IN | não | Tempo de expiração do token (padrão `24h`) |
+
+No Docker, a API sobrescreve `DATABASE_URL` internamente para usar o host
+`postgres` na rede dos containers. As credenciais continuam sendo lidas do `.env`.
 
 A aplicação valida as variáveis críticas no bootstrap para evitar subir com configuração incompleta.
 
@@ -276,6 +308,7 @@ Algumas medidas implementadas:
 - validação global com whitelist
 - bloqueio de campos não permitidos
 - mensagens genéricas no login para evitar enumeração de usuários
+- credenciais do banco apenas no `.env`, sem defaults no `docker-compose.yml`
 
 ---
 

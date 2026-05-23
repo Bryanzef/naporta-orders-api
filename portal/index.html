@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>naPorta — Portal de Pedidos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <div id="toast" class="toast hidden" role="alert"></div>
+
+    <section id="auth-screen" class="auth-screen">
+      <div class="auth-card">
+        <div class="brand">
+          <div class="brand-mark">nP</div>
+          <div>
+            <h1>naPorta</h1>
+            <p>Portal de gestão de pedidos</p>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button type="button" class="tab active" data-tab="login">Entrar</button>
+          <button type="button" class="tab" data-tab="register">Cadastrar</button>
+        </div>
+
+        <form id="login-form" class="auth-form">
+          <label>
+            E-mail
+            <input type="email" name="email" required placeholder="dev@naporta.com.br" />
+          </label>
+          <label>
+            Senha
+            <input type="password" name="password" required minlength="6" placeholder="••••••••" />
+          </label>
+          <button type="submit" class="btn btn-primary">Entrar</button>
+        </form>
+
+        <form id="register-form" class="auth-form hidden">
+          <label>
+            Nome
+            <input type="text" name="name" required minlength="2" placeholder="Seu nome" />
+          </label>
+          <label>
+            E-mail
+            <input type="email" name="email" required placeholder="voce@empresa.com.br" />
+          </label>
+          <label>
+            Senha
+            <input type="password" name="password" required minlength="6" placeholder="Mínimo 6 caracteres" />
+          </label>
+          <button type="submit" class="btn btn-primary">Criar conta</button>
+        </form>
+
+        <p class="auth-hint">
+          Seed: <code>dev@naporta.com.br</code> / <code>senha123</code>
+        </p>
+      </div>
+    </section>
+
+    <section id="app-screen" class="app-screen hidden">
+      <header class="topbar">
+        <div class="topbar-brand">
+          <div class="brand-mark sm">nP</div>
+          <span>naPorta Portal</span>
+        </div>
+        <div class="topbar-actions">
+          <span id="user-email" class="user-email"></span>
+          <button type="button" id="logout-btn" class="btn btn-ghost">Sair</button>
+        </div>
+      </header>
+
+      <main class="main">
+        <div class="page-header">
+          <div>
+            <h2>Pedidos</h2>
+            <p id="orders-summary">Carregando...</p>
+          </div>
+          <button type="button" id="new-order-btn" class="btn btn-primary">+ Novo pedido</button>
+        </div>
+
+        <form id="filters-form" class="filters">
+          <label>
+            Número
+            <input type="text" name="orderNumber" placeholder="ORD-2026-000001" />
+          </label>
+          <label>
+            Status
+            <select name="status">
+              <option value="">Todos</option>
+              <option value="PENDING">Pendente</option>
+              <option value="CONFIRMED">Confirmado</option>
+              <option value="IN_TRANSIT">Em trânsito</option>
+              <option value="DELIVERED">Entregue</option>
+              <option value="CANCELLED">Cancelado</option>
+            </select>
+          </label>
+          <label>
+            De
+            <input type="date" name="startDate" />
+          </label>
+          <label>
+            Até
+            <input type="date" name="endDate" />
+          </label>
+          <div class="filters-actions">
+            <button type="submit" class="btn btn-secondary">Filtrar</button>
+            <button type="button" id="clear-filters-btn" class="btn btn-ghost">Limpar</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Cliente</th>
+                <th>Entrega</th>
+                <th>Status</th>
+                <th>Criado em</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody">
+              <tr>
+                <td colspan="6" class="empty">Carregando pedidos...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="pagination" class="pagination hidden">
+          <button type="button" id="prev-page" class="btn btn-ghost">Anterior</button>
+          <span id="page-info"></span>
+          <button type="button" id="next-page" class="btn btn-ghost">Próxima</button>
+        </div>
+      </main>
+    </section>
+
+    <dialog id="order-dialog" class="order-dialog">
+      <form id="order-form" method="dialog">
+        <header class="dialog-header">
+          <h3 id="dialog-title">Novo pedido</h3>
+          <button type="button" id="close-dialog" class="icon-btn" aria-label="Fechar">×</button>
+        </header>
+
+        <div class="dialog-body">
+          <fieldset id="status-field" class="hidden">
+            <label>
+              Status
+              <select name="status">
+                <option value="PENDING">Pendente</option>
+                <option value="CONFIRMED">Confirmado</option>
+                <option value="IN_TRANSIT">Em trânsito</option>
+                <option value="DELIVERED">Entregue</option>
+                <option value="CANCELLED">Cancelado</option>
+              </select>
+            </label>
+          </fieldset>
+
+          <div class="form-grid">
+            <label class="span-2">
+              Data prevista de entrega
+              <input type="datetime-local" name="deliveryDate" required />
+            </label>
+            <label>
+              Nome do cliente
+              <input type="text" name="customerName" required maxlength="180" />
+            </label>
+            <label>
+              Documento (CPF/CNPJ)
+              <input type="text" name="customerDocument" required placeholder="000.000.000-00" />
+            </label>
+            <label class="span-2">
+              Rua
+              <input type="text" name="addressStreet" required maxlength="180" />
+            </label>
+            <label>
+              Número
+              <input type="text" name="addressNumber" required maxlength="20" />
+            </label>
+            <label>
+              Complemento
+              <input type="text" name="addressComplement" maxlength="120" />
+            </label>
+            <label>
+              Bairro
+              <input type="text" name="addressDistrict" required maxlength="120" />
+            </label>
+            <label>
+              Cidade
+              <input type="text" name="addressCity" required maxlength="120" />
+            </label>
+            <label>
+              UF
+              <input type="text" name="addressState" required maxlength="2" placeholder="SC" />
+            </label>
+            <label>
+              CEP
+              <input type="text" name="addressZipCode" required placeholder="00000-000" />
+            </label>
+          </div>
+
+          <div class="items-section">
+            <div class="items-header">
+              <h4>Itens do pedido</h4>
+              <button type="button" id="add-item-btn" class="btn btn-ghost btn-sm">+ Item</button>
+            </div>
+            <div id="items-list"></div>
+          </div>
+        </div>
+
+        <footer class="dialog-footer">
+          <button type="button" id="cancel-dialog" class="btn btn-ghost">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="save-order-btn">Salvar</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>

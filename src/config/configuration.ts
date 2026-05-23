@@ -32,7 +32,7 @@ export default (): AppConfig => {
     },
     jwt: {
       secret: jwtSecret,
-      expiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
+      expiresIn: process.env.JWT_EXPIRES_IN ?? '24h',
     },
   };
 };
