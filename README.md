@@ -88,16 +88,12 @@ PostgreSQL vêm exclusivamente do arquivo `.env` (copiado de `.env.example`).
 cp .env.example .env
 ```
 
-Revise `DB_USER`, `DB_PASSWORD` e `DB_NAME` no `.env` antes de subir os containers.
-O `.env` não deve ser commitado — apenas o `.env.example`.
-
 ```bash
 docker compose up -d --build
 
 docker compose exec api npm run db:seed
 ```
 
-As migrations rodam automaticamente ao iniciar o container `api`.
 
 ### Endpoints locais
 
@@ -307,8 +303,6 @@ Algumas medidas implementadas:
 - bcrypt para hash de senha
 - validação global com whitelist
 - bloqueio de campos não permitidos
-- mensagens genéricas no login para evitar enumeração de usuários
-- credenciais do banco apenas no `.env`, sem defaults no `docker-compose.yml`
 
 ---
 
@@ -345,7 +339,7 @@ npm test
 
 ---
 
-# Diferenciais implementados
+# O que foi implementado:
 
 | Funcionalidade | Status |
 |---|---|
@@ -359,8 +353,6 @@ npm test
 | Filtros | ✅ |
 
 ---
-
-# Melhorias futuras
 
 Caso o projeto evoluísse para produção, alguns próximos passos seriam:
 
